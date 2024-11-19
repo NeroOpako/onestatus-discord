@@ -1,13 +1,21 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/go-resty/resty/v2"
 )
 
 var accessToken string = ""
+var secrets Secrets
+
+type Secrets struct {
+	BSKYTestUsername string `json:"bsky_test_username"`
+	BSKYTestPassword string `json:"bsky_test_password"`
+}
 
 type LoginResponse struct {
 	AccessJwt string `json:"accessJwt"`
@@ -19,8 +27,18 @@ type LoginPayload struct {
 }
 
 func setup() string {
+	if secrets.BSKYTestUsername == "" {
+		file, err := os.ReadFile("secrets.json")
+		if err != nil {
+			log.Fatalf("Error reading secrets file: %v", err)
+		}
+		err = json.Unmarshal(file, &secrets)
+		if err != nil {
+			log.Fatalf("Error parsing secrets: %v", err)
+		}
+	}
 	if accessToken == "" {
-		bskySetup(LoginPayload{Identifier: "neropako.dev", Password: "xfbv-5op3-7pqy-emqh"})
+		bskySetup(LoginPayload{Identifier: secrets.BSKYTestUsername, Password: secrets.BSKYTestPassword})
 	}
 	return fetchProfile()
 }
