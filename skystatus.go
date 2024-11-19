@@ -40,7 +40,7 @@ func setup(payload SkyStatusSetupRequest) SkyStatusSetupResponse {
 	if response = getAccessToken(payload, response); response.ErrorMsg != "" {
 		return response
 	}
-	if response = getDid(payload, response); response.ErrorMsg != "" {
+	if response = getDid(response); response.ErrorMsg != "" {
 		return response
 	}
 	return response
@@ -70,7 +70,7 @@ func getAccessToken(userPayload SkyStatusSetupRequest, response SkyStatusSetupRe
 	return response
 }
 
-func getDid(userPayload SkyStatusSetupRequest, response SkyStatusSetupResponse) SkyStatusSetupResponse {
+func getDid(response SkyStatusSetupResponse) SkyStatusSetupResponse {
 	client := resty.New()
 
 	resp, err := client.R().

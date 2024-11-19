@@ -50,5 +50,5 @@ func getPresence() SkyStatusDiscordSetupResponse {
 	/* presence := client.getPresence
 
 	log.Printf("Current Rich Presence: %+v\n", presence) */
-	return SkyStatusDiscordSetupResponse{Presence: ""}
+	return SkyStatusDiscordSetupResponse{Presence: "Test"}
 }
