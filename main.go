@@ -1,25 +1,64 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"log"
 )
 
 func main() {
-	r := gin.Default()
 
-	r.GET("/ping", func(c *gin.Context) {
-		res := setup()
-		c.JSON(200, res)
-	})
+	fmt.Println("Welcome to my simple terminal app!")
 
-	r.POST("/data", func(c *gin.Context) {
-		var input map[string]interface{}
-		if err := c.BindJSON(&input); err != nil {
-			c.JSON(400, gin.H{"error": "Invalid input"})
-			return
-		}
-		c.JSON(200, gin.H{"received": input})
-	})
+	fmt.Print("Please enter your server [Default: bsky.social]: ")
 
-	r.Run(":8080") // Run on port 8080
+	// Read user input
+	var server string
+	_, err := fmt.Scanln(&server)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	if server == "" {
+		server = "bsky.social"
+	} else {
+		server = "https://" + server
+	}
+
+	fmt.Print("Please enter your username : ")
+
+	// Read user input
+	var username string
+	_, err = fmt.Scanln(&username)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	fmt.Print("Please enter your password [Use an app password!] : ")
+
+	// Read user input
+	var password string
+	_, err = fmt.Scanln(&password)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	skyStatusResponse := setup(SkyStatusSetupRequest{Server: server, Identifier: username, Password: password})
+	if skyStatusResponse.ErrorMsg != "" {
+		log.Fatal("Error while logging into BlueSky, check if your credentials are correct.")
+		return
+	}
+
+	discordResponse := getPresence()
+	if discordResponse.ErrorMsg != "" {
+		log.Fatal("Error while reading Discord status")
+		return
+	}
+
+	if discordResponse.Presence != "" {
+		createPost(skyStatusResponse.LoggedUser, discordResponse.Presence)
+	}
+
 }
