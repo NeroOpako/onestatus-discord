@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/diamondburned/arikawa/discord"
 	"github.com/diamondburned/arikawa/gateway"
 	"github.com/diamondburned/arikawa/session"
 )
@@ -19,8 +20,25 @@ func setupDiscord() string {
 
 	// Add a handler for presence updates
 	s.AddHandler(func(e *gateway.PresenceUpdateEvent) {
-		fmt.Printf("User %s updated presence: %s\n", e.User.ID, e.Activities[0].)
-		//sendPresence()
+		if len(e.Activities) > 0 {
+			action := ""
+			switch e.Activities[0].Type {
+			case discord.GameActivity:
+				action = "playing"
+			case discord.WatchingActivity:
+				action = "watching"
+			case discord.StreamingActivity: // Multiple cases for the same action
+				action = "streaming"
+			case discord.ListeningActivity: // Multiple cases for the same action
+				action = "listening"
+			case discord.CustomActivity: // Multiple cases for the same action
+				action = ""
+			default: // Optional default case
+				action = ""
+			}
+			fmt.Printf("User is %s %s\n", action, e.Activities[0].Name)
+			//sendPresence()
+		}
 	})
 
 	// Connect to Discord
