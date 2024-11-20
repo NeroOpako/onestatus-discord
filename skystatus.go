@@ -5,8 +5,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/go-resty/resty/v2"
 )
+
+var skyUser SkyStatusLoggedUser
 
 type SkyStatusSetupResponse struct {
 	LoggedUser SkyStatusLoggedUser
@@ -28,68 +31,59 @@ type BSkyLoginResponse struct {
 	AccessJwt string `json:"accessJwt"`
 }
 
-type SkyStatusSetupRequest struct {
-	Identifier string
-	Password   string
-	Server     string
-}
-
-func setup(payload SkyStatusSetupRequest) SkyStatusSetupResponse {
-	var response SkyStatusSetupResponse
-	response.LoggedUser = SkyStatusLoggedUser{Server: payload.Server, UserName: payload.Identifier}
-	if response = getAccessToken(payload, response); response.ErrorMsg != "" {
+func setupBlueSky() string {
+	skyUser = SkyStatusLoggedUser{Server: secrets.BSkyUserServer, UserName: secrets.BSkyUserName}
+	if response := getAccessToken(); response != "" {
 		return response
 	}
-	if response = getDid(response); response.ErrorMsg != "" {
+	if response := getDid(); response != "" {
 		return response
 	}
-	return response
+	return ""
 }
 
-func getAccessToken(userPayload SkyStatusSetupRequest, response SkyStatusSetupResponse) SkyStatusSetupResponse {
+func getAccessToken() string {
 	client := resty.New()
 
 	// Login credentials
 	payload := map[string]string{
-		"identifier": userPayload.Identifier, // Replace with your handle
-		"password":   userPayload.Password,   // Replace with your password
+		"identifier": secrets.BSkyUserName,     // Replace with your handle
+		"password":   secrets.BSkyUserPassword, // Replace with your password
 	}
 	// Make login request
 	resp, err := client.R().
 		SetBody(payload).
 		SetResult(&BSkyLoginResponse{}).
-		Post(response.LoggedUser.Server + "/xrpc/com.atproto.server.createSession")
+		Post(skyUser.Server + "/xrpc/com.atproto.server.createSession")
 
 	if err != nil {
 		log.Fatal("Error:", err)
-		response.ErrorMsg = "Error while logging in"
-		return response
+		return "Error while logging in"
 	}
 	result := resp.Result().(*BSkyLoginResponse)
-	response.LoggedUser.AccessToken = result.AccessJwt
-	return response
+	skyUser.AccessToken = result.AccessJwt
+	return ""
 }
 
-func getDid(response SkyStatusSetupResponse) SkyStatusSetupResponse {
+func getDid() string {
 	client := resty.New()
 
 	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+response.LoggedUser.AccessToken).
+		SetHeader("Authorization", "Bearer "+skyUser.AccessToken).
 		SetResult(&BSkyProfileResponse{}).
-		Get(response.LoggedUser.Server + "/xrpc/app.bsky.actor.getProfile?actor=" + response.LoggedUser.UserName)
+		Get(skyUser.Server + "/xrpc/app.bsky.actor.getProfile?actor=" + skyUser.UserName)
 
 	if err != nil {
 		log.Fatal("Error:", err)
-		response.ErrorMsg = "Error while retrieving user data"
-		return response
+		return "Error while retrieving user data"
 	}
 
 	result := resp.Result().(*BSkyProfileResponse)
-	response.LoggedUser.Did = result.Did
-	return response
+	skyUser.Did = result.Did
+	return ""
 }
 
-func createPost(loggedUser SkyStatusLoggedUser, presence string) string {
+func createPost(loggedUser SkyStatusLoggedUser, presence discord.Status) string {
 	// Initialize Resty client
 	client := resty.New()
 

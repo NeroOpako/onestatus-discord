@@ -1,54 +1,33 @@
 package main
 
 import (
-	"encoding/json"
-	"log"
-	"os"
+	"fmt"
 
-	"github.com/hugolgst/rich-go/client"
+	"github.com/diamondburned/arikawa/gateway"
+	"github.com/diamondburned/arikawa/session"
 )
 
-var secrets Secrets
+func setupDiscord() string {
 
-type Secrets struct {
-	DiscordAppID string `json:"discord_app_id"`
-}
-
-type SkyStatusDiscordSetupResponse struct {
-	Presence string
-	ErrorMsg string
-}
-
-func loadSecrets() SkyStatusDiscordSetupResponse {
-	file, err := os.ReadFile("secrets.json")
+	// Create a new session with GUILD_PRESENCES intent
+	s, err := session.NewWithIntents("Bot "+secrets.DiscordAppToken, gateway.IntentGuilds|gateway.IntentGuildPresences)
 	if err != nil {
-		log.Fatalf("Error reading secrets file: %v", err)
-		return SkyStatusDiscordSetupResponse{ErrorMsg: "Error while initializing Discord Communication"}
+		fmt.Println("Error opening connection:", err)
+		return "Error while initializing Discord Communication"
 	}
 
-	var secrets Secrets
+	// Add a handler for presence updates
+	s.AddHandler(func(e *gateway.PresenceUpdateEvent) {
+		fmt.Printf("User %s updated presence: %s\n", e.User.ID, e.Activities)
+		//sendPresence()
+	})
 
-	err = json.Unmarshal(file, &secrets)
-	if err != nil {
-		log.Fatalf("Error parsing secrets: %v", err)
-		return SkyStatusDiscordSetupResponse{ErrorMsg: "Error while initializing Discord Communication"}
+	// Connect to Discord
+	if err := s.Open(); err != nil {
+		fmt.Println("Error opening connection:", err)
+		return "Error while initializing Discord Communication"
 	}
-	return SkyStatusDiscordSetupResponse{ErrorMsg: ""}
-}
+	defer s.Close()
 
-func getPresence() SkyStatusDiscordSetupResponse {
-	if response := loadSecrets(); response.ErrorMsg != "" {
-		return response
-	}
-
-	if err := client.Login(secrets.DiscordAppID); err != nil {
-		log.Fatalf("Failed to initialize Discord RPC: %v", err)
-		return SkyStatusDiscordSetupResponse{ErrorMsg: "Error while initializing Discord Communication"}
-	}
-
-	// Query the current Rich Presence
-	/* presence := client.getPresence
-
-	log.Printf("Current Rich Presence: %+v\n", presence) */
-	return SkyStatusDiscordSetupResponse{Presence: "Test"}
+	return ""
 }

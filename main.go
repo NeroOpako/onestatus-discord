@@ -1,64 +1,71 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/diamondburned/arikawa/v3/discord"
 )
+
+var secrets Secrets
+
+type Secrets struct {
+	BSkyUserName     string `json:"bsky_user_name"`
+	BSkyUserServer   string `json:"bsky_user_server"`
+	BSkyUserPassword string `json:"bsky_user_password"`
+	DiscordAppID     string `json:"discord_app_id"`
+	DiscordAppToken  string `json:"discord_app_token"`
+}
+
+func loadSecrets() string {
+	file, err := os.ReadFile("secrets.json")
+	if err != nil {
+		log.Fatalf("Error reading secrets file: %v", err)
+		return "Error reading secrets file"
+	}
+
+	err = json.Unmarshal(file, &secrets)
+	if err != nil {
+		log.Fatalf("Error parsing secrets: %v", err)
+		return "Error parsing secrets"
+	}
+	return ""
+}
 
 func main() {
 
-	fmt.Println("Welcome to my simple terminal app!")
+	fmt.Println("Initializing service...")
 
-	fmt.Print("Please enter your server [Default: bsky.social]: ")
-
-	// Read user input
-	var server string
-	_, err := fmt.Scanln(&server)
-	if err != nil {
-		log.Fatal(err)
+	if err := loadSecrets(); err != "" {
+		log.Fatal("Error while loading secrets.json, check if the file is correct.")
 		return
 	}
 
-	if server == "" {
-		server = "bsky.social"
-	} else {
-		server = "https://" + server
-	}
-
-	fmt.Print("Please enter your username : ")
-
-	// Read user input
-	var username string
-	_, err = fmt.Scanln(&username)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	fmt.Print("Please enter your password [Use an app password!] : ")
-
-	// Read user input
-	var password string
-	_, err = fmt.Scanln(&password)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	skyStatusResponse := setup(SkyStatusSetupRequest{Server: server, Identifier: username, Password: password})
-	if skyStatusResponse.ErrorMsg != "" {
+	if err := setupBlueSky(); err != "" {
 		log.Fatal("Error while logging into BlueSky, check if your credentials are correct.")
 		return
 	}
 
-	discordResponse := getPresence()
-	if discordResponse.ErrorMsg != "" {
-		log.Fatal("Error while reading Discord status")
+	if err := setupDiscord(); err != "" {
+		log.Fatal("Error while logging into Discord, check if your credentials are correct.")
 		return
 	}
 
-	if discordResponse.Presence != "" {
-		createPost(skyStatusResponse.LoggedUser, discordResponse.Presence)
-	}
+	fmt.Println("Service is now running. Press CTRL+C to exit.")
 
+	// Wait for a termination signal
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+
+	fmt.Println("Shutting down service.")
+
+}
+
+func sendPresence(presence discord.Status) {
+	createPost(skyUser, presence)
 }
