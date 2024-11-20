@@ -10,6 +10,7 @@ import (
 func setupDiscord() string {
 
 	// Create a new session with GUILD_PRESENCES intent
+
 	s, err := session.NewWithIntents("Bot "+secrets.DiscordAppToken, gateway.IntentGuilds|gateway.IntentGuildPresences)
 	if err != nil {
 		fmt.Println("Error opening connection:", err)
@@ -18,7 +19,7 @@ func setupDiscord() string {
 
 	// Add a handler for presence updates
 	s.AddHandler(func(e *gateway.PresenceUpdateEvent) {
-		fmt.Printf("User %s updated presence: %s\n", e.User.ID, e.Activities)
+		fmt.Printf("User %s updated presence: %s\n", e.User.ID, e.Activities[0].)
 		//sendPresence()
 	})
 
@@ -27,7 +28,6 @@ func setupDiscord() string {
 		fmt.Println("Error opening connection:", err)
 		return "Error while initializing Discord Communication"
 	}
-	defer s.Close()
 
 	return ""
 }
