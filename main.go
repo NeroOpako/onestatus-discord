@@ -38,17 +38,21 @@ func loadSecrets() string {
 
 func main() {
 
-	fmt.Println("Initializing service...")
+	fmt.Println("Initializing service (1/3)")
 
 	if err := loadSecrets(); err != "" {
 		log.Fatal("Error while loading secrets.json, check if the file is correct.")
 		return
 	}
 
+	fmt.Println("Initializing service (2/3)")
+
 	if err := setupBlueSky(); err != "" {
 		log.Fatal("Error while logging into BlueSky, check if your credentials are correct.")
 		return
 	}
+
+	fmt.Println("Initializing service (3/3)")
 
 	if err := setupDiscord(); err != "" {
 		log.Fatal("Error while logging into Discord, check if your credentials are correct.")
