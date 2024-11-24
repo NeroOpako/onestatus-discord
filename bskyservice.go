@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"time"
 
-	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -78,45 +76,6 @@ func getDid() string {
 	return ""
 }
 
-func createPost(loggedUser BSkyLoggedUser, presence discord.Status) string {
-	// Initialize Resty client
-	client := resty.New()
-
-	// Define the record data
-	recordData := map[string]interface{}{
-		"text":      presence,
-		"createdAt": time.Now().UTC().Format(time.RFC3339), // Proper timestamp format
-	}
-
-	// Prepare the request payload
-	payload := map[string]interface{}{
-		"collection": "app.bsky.feed.post", // Collection to save the record
-		"repo":       loggedUser.Did,       // Replace with the user's DID or handle
-		"record":     recordData,           // The actual record data
-	}
-
-	// Make the API call
-	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+loggedUser.AccessToken).
-		SetHeader("Content-Type", "application/json").
-		SetBody(payload).
-		Post(loggedUser.Server + "/xrpc/com.atproto.repo.createRecord")
-
-	if err != nil {
-		log.Fatalf("Error creating record: %v", err)
-	}
-
-	// Check the response
-	if resp.IsError() {
-		log.Fatalf("API call failed: %s", resp.String())
-	}
-
-	// Print the result
-	fmt.Printf("Record created successfully: %s\n", resp.String())
-
-	return resp.String()
-}
-
 func updateStatus(record Record) string {
 	// Initialize Resty client
 	client := resty.New()
@@ -148,41 +107,6 @@ func updateStatus(record Record) string {
 
 	// Print the result
 	fmt.Printf("Record created successfully: %s\n", resp.String())
-
-	return ""
-}
-
-func deleteRecord() string {
-	// Initialize Resty client
-	client := resty.New()
-
-	// Prepare the request payload
-	payload := map[string]interface{}{
-		"collection": "dev.neropako.onestatus.status", // Collection to save the record
-		"repo":       skyUser.Did,                     // Replace with the user's DID or handle
-		"rkey":       "3lbpgcr2zns2x",                 // The actual record data
-	}
-
-	// Make the API call
-	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+skyUser.AccessToken).
-		SetHeader("Content-Type", "application/json").
-		SetBody(payload).
-		Post(skyUser.Server + "/xrpc/com.atproto.repo.deleteRecord")
-
-	if err != nil {
-		log.Fatalf("Error creating record: %v", err)
-		return "Error while sending update"
-	}
-
-	// Check the response
-	if resp.IsError() {
-		log.Fatalf("API call failed: %s", resp.String())
-		return "Error while sending update"
-	}
-
-	// Print the result
-	fmt.Printf("Record delete successfully: %s\n", resp.String())
 
 	return ""
 }

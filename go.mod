@@ -1,4 +1,4 @@
-module skystatus-api
+module onestatus-discord
 
 go 1.23.3
 
