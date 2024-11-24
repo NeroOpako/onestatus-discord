@@ -61,6 +61,8 @@ func main() {
 
 	fmt.Println("Service is now running. Press CTRL+C to exit.")
 
+	deleteRecord()
+
 	// Wait for a termination signal
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

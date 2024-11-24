@@ -9,14 +9,9 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-var skyUser SkyStatusLoggedUser
+var skyUser BSkyLoggedUser
 
-type SkyStatusSetupResponse struct {
-	LoggedUser SkyStatusLoggedUser
-	ErrorMsg   string
-}
-
-type SkyStatusLoggedUser struct {
+type BSkyLoggedUser struct {
 	Did         string
 	AccessToken string
 	UserName    string
@@ -32,7 +27,7 @@ type BSkyLoginResponse struct {
 }
 
 func setupBlueSky() string {
-	skyUser = SkyStatusLoggedUser{Server: secrets.BSkyUserServer, UserName: secrets.BSkyUserName}
+	skyUser = BSkyLoggedUser{Server: secrets.BSkyUserServer, UserName: secrets.BSkyUserName}
 	if response := getAccessToken(); response != "" {
 		return response
 	}
@@ -83,7 +78,7 @@ func getDid() string {
 	return ""
 }
 
-func createPost(loggedUser SkyStatusLoggedUser, presence discord.Status) string {
+func createPost(loggedUser BSkyLoggedUser, presence discord.Status) string {
 	// Initialize Resty client
 	client := resty.New()
 
@@ -120,4 +115,74 @@ func createPost(loggedUser SkyStatusLoggedUser, presence discord.Status) string 
 	fmt.Printf("Record created successfully: %s\n", resp.String())
 
 	return resp.String()
+}
+
+func updateStatus(record Record) string {
+	// Initialize Resty client
+	client := resty.New()
+
+	// Prepare the request payload
+	payload := map[string]interface{}{
+		"collection": "dev.neropako.onestatus.status", // Collection to save the record
+		"repo":       skyUser.Did,                     // Replace with the user's DID or handle
+		"record":     record,                          // The actual record data
+	}
+
+	// Make the API call
+	resp, err := client.R().
+		SetHeader("Authorization", "Bearer "+skyUser.AccessToken).
+		SetHeader("Content-Type", "application/json").
+		SetBody(payload).
+		Post(skyUser.Server + "/xrpc/com.atproto.repo.createRecord")
+
+	if err != nil {
+		log.Fatalf("Error creating record: %v", err)
+		return "Error while sending update"
+	}
+
+	// Check the response
+	if resp.IsError() {
+		log.Fatalf("API call failed: %s", resp.String())
+		return "Error while sending update"
+	}
+
+	// Print the result
+	fmt.Printf("Record created successfully: %s\n", resp.String())
+
+	return ""
+}
+
+func deleteRecord() string {
+	// Initialize Resty client
+	client := resty.New()
+
+	// Prepare the request payload
+	payload := map[string]interface{}{
+		"collection": "dev.neropako.onestatus.status", // Collection to save the record
+		"repo":       skyUser.Did,                     // Replace with the user's DID or handle
+		"rkey":       "3lbpgcr2zns2x",                 // The actual record data
+	}
+
+	// Make the API call
+	resp, err := client.R().
+		SetHeader("Authorization", "Bearer "+skyUser.AccessToken).
+		SetHeader("Content-Type", "application/json").
+		SetBody(payload).
+		Post(skyUser.Server + "/xrpc/com.atproto.repo.deleteRecord")
+
+	if err != nil {
+		log.Fatalf("Error creating record: %v", err)
+		return "Error while sending update"
+	}
+
+	// Check the response
+	if resp.IsError() {
+		log.Fatalf("API call failed: %s", resp.String())
+		return "Error while sending update"
+	}
+
+	// Print the result
+	fmt.Printf("Record delete successfully: %s\n", resp.String())
+
+	return ""
 }

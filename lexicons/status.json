@@ -1,0 +1,52 @@
+/** lexicons/status.json **/
+{
+    "lexicon": 1,
+    "id": "dev.neropako.onestatus.status",
+    "defs": {
+      "main": {
+        "type": "record",
+        "key": "tid",
+        "record": {
+          "type": "object",
+          "required": ["app", "title", "activityType", "createdAt"],
+          "properties": {
+            "app": {
+              "type": "string",
+              "minLength": 1,
+              "maxGraphemes": 1,
+              "maxLength": 100
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxGraphemes": 1,
+              "maxLength": 100
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "maxGraphemes": 1,
+              "maxLength": 100
+            },
+            "image": {
+              "type": "string",
+              "minLength": 1,
+              "maxGraphemes": 1,
+              "maxLength": 500
+            },
+            "activityType": {
+              "type": "string",
+              "minLength": 1,
+              "maxGraphemes": 1,
+              "maxLength": 50
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "datetime"
+            }
+          }
+        }
+      }
+    }
+  }
+  
